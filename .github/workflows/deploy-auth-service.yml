@@ -1,15 +1,17 @@
-# deploy-auth-service.yml
-# NOTA: Este arquivo define o pipeline de CI/CD para o nosso serviço de autenticação.
-# Ele será acionado automaticamente sempre que houver uma alteração na pasta 'backend/auth-service'.
+# deploy-auth-service.yml - Versão FINAL com Gatilho Manual
 
 name: Deploy Auth Service to Cloud Run
 
 on:
+  # Gatilho para acionamento manual (cria o botão "Run workflow")
+  workflow_dispatch:
+  
+  # Gatilho automático ao alterar o código na pasta do serviço
   push:
     branches:
-      - main # O pipeline roda quando houver alterações na branch 'main'
+      - main
     paths:
-      - 'backend/auth-service/**' # E somente se as alterações forem dentro desta pasta
+      - 'backend/auth-service/**'
 
 jobs:
   build-and-deploy:
@@ -26,7 +28,6 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Authenticate to Google Cloud
-        # Usa os segredos que configuramos para fazer login no GCP de forma segura
         uses: google-github-actions/auth@v1
         with:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
@@ -37,18 +38,12 @@ jobs:
 
       - name: Build and Push Docker image
         run: |-
-          # Configura o Docker para autenticar com o Artifact Registry do GCP
           gcloud auth configure-docker southamerica-east1-docker.pkg.dev
-          
-          # Constrói a imagem Docker a partir do nosso código
           docker build -t southamerica-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/peoplepulse-repo/auth-service:${{ github.sha }} ./backend/auth-service
-          
-          # Envia a imagem construída para o Artifact Registry
           docker push southamerica-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/peoplepulse-repo/auth-service:${{ github.sha }}
 
       - name: Deploy to Cloud Run
         run: |-
-          # Implanta a nova imagem no Google Cloud Run
           gcloud run deploy auth-service \
             --image=southamerica-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/peoplepulse-repo/auth-service:${{ github.sha }} \
             --region=southamerica-east1 \
