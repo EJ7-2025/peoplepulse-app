@@ -1,4 +1,4 @@
-# deploy-auth-service.yml - v3 com passo de depuração
+# deploy-auth-service.yml - Versão 4 (FINAL) com correção de contexto
 
 name: Deploy Auth Service to Cloud Run
 
@@ -23,10 +23,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # NOVO PASSO DE DEPURAÇÃO: Pede ao robô para listar todos os arquivos
-      - name: List files for debugging
-        run: ls -R
-
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v1
         with:
@@ -37,10 +33,20 @@ jobs:
         uses: google-github-actions/setup-gcloud@v1
 
       - name: Build and Push Docker image
+        # ---- INÍCIO DA CORREÇÃO ----
+        # AQUI ESTÁ A MUDANÇA: Adicionamos 'working-directory' para forçar
+        # a execução dos comandos de dentro da pasta correta.
+        working-directory: ./backend/auth-service
         run: |-
+          # Configura o Docker para o Artifact Registry
           gcloud auth configure-docker southamerica-east1-docker.pkg.dev
-          docker build -t southamerica-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/peoplepulse-repo/auth-service:${{ github.sha }} ./backend/auth-service
+          
+          # Constrói a imagem Docker. O "." significa "use esta pasta atual".
+          docker build -t southamerica-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/peoplepulse-repo/auth-service:${{ github.sha }} .
+          
+          # Envia a imagem para o Artifact Registry
           docker push southamerica-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/peoplepulse-repo/auth-service:${{ github.sha }}
+        # ---- FIM DA CORREÇÃO ----
 
       - name: Deploy to Cloud Run
         run: |-
