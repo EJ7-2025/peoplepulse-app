@@ -1,3 +1,4 @@
+# Versão 1.0.0 - Disparando o primeiro deploy
 # main.py - Serviço de Autenticação do PeoplePulse
 # NOTA: Esta é a primeira versão do nosso serviço.
 # Ele define a estrutura da API, os modelos de dados e uma lógica de login simulada.
