@@ -1,4 +1,4 @@
-# deploy-auth-service.yml - Versão 4 (FINAL) com correção de contexto
+# deploy-auth-service.yml - Versão 5 (FINAL) com correção de caminho explícito
 
 name: Deploy Auth Service to Cloud Run
 
@@ -33,20 +33,15 @@ jobs:
         uses: google-github-actions/setup-gcloud@v1
 
       - name: Build and Push Docker image
-        # ---- INÍCIO DA CORREÇÃO ----
-        # AQUI ESTÁ A MUDANÇA: Adicionamos 'working-directory' para forçar
-        # a execução dos comandos de dentro da pasta correta.
-        working-directory: ./backend/auth-service
         run: |-
-          # Configura o Docker para o Artifact Registry
           gcloud auth configure-docker southamerica-east1-docker.pkg.dev
           
-          # Constrói a imagem Docker. O "." significa "use esta pasta atual".
-          docker build -t southamerica-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/peoplepulse-repo/auth-service:${{ github.sha }} .
+          # --- CORREÇÃO APLICADA AQUI ---
+          # Em vez de entrar na pasta, passamos o caminho do Dockerfile com a flag '-f'
+          # e o caminho do código-fonte no final. É mais explícito.
+          docker build -t southamerica-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/peoplepulse-repo/auth-service:${{ github.sha }} -f ./backend/auth-service/Dockerfile ./backend/auth-service
           
-          # Envia a imagem para o Artifact Registry
           docker push southamerica-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/peoplepulse-repo/auth-service:${{ github.sha }}
-        # ---- FIM DA CORREÇÃO ----
 
       - name: Deploy to Cloud Run
         run: |-
