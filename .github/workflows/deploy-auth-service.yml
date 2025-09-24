@@ -1,0 +1,56 @@
+# deploy-auth-service.yml
+# NOTA: Este arquivo define o pipeline de CI/CD para o nosso serviço de autenticação.
+# Ele será acionado automaticamente sempre que houver uma alteração na pasta 'backend/auth-service'.
+
+name: Deploy Auth Service to Cloud Run
+
+on:
+  push:
+    branches:
+      - main # O pipeline roda quando houver alterações na branch 'main'
+    paths:
+      - 'backend/auth-service/**' # E somente se as alterações forem dentro desta pasta
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+
+    # Permissões necessárias para a autenticação segura com o GCP
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Authenticate to Google Cloud
+        # Usa os segredos que configuramos para fazer login no GCP de forma segura
+        uses: google-github-actions/auth@v1
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
+      - name: Build and Push Docker image
+        run: |-
+          # Configura o Docker para autenticar com o Artifact Registry do GCP
+          gcloud auth configure-docker southamerica-east1-docker.pkg.dev
+          
+          # Constrói a imagem Docker a partir do nosso código
+          docker build -t southamerica-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/peoplepulse-repo/auth-service:${{ github.sha }} ./backend/auth-service
+          
+          # Envia a imagem construída para o Artifact Registry
+          docker push southamerica-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/peoplepulse-repo/auth-service:${{ github.sha }}
+
+      - name: Deploy to Cloud Run
+        run: |-
+          # Implanta a nova imagem no Google Cloud Run
+          gcloud run deploy auth-service \
+            --image=southamerica-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/peoplepulse-repo/auth-service:${{ github.sha }} \
+            --region=southamerica-east1 \
+            --platform=managed \
+            --allow-unauthenticated
