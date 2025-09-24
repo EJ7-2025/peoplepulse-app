@@ -1,5 +1,5 @@
-fastapi
-uvicorn[standard]
-pydantic
-python-jose[cryptography]
-passlib[bcrypt]
+peoplepulse-app/
+└── backend/
+    └── auth-service/
+        ├── main.py
+        └── requirements.txt
