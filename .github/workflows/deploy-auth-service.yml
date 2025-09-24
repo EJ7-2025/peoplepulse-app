@@ -1,12 +1,9 @@
-# deploy-auth-service.yml - Versão FINAL com Gatilho Manual
+# deploy-auth-service.yml - v3 com passo de depuração
 
 name: Deploy Auth Service to Cloud Run
 
 on:
-  # Gatilho para acionamento manual (cria o botão "Run workflow")
   workflow_dispatch:
-  
-  # Gatilho automático ao alterar o código na pasta do serviço
   push:
     branches:
       - main
@@ -18,7 +15,6 @@ jobs:
     name: Build and Deploy
     runs-on: ubuntu-latest
 
-    # Permissões necessárias para a autenticação segura com o GCP
     permissions:
       contents: 'read'
       id-token: 'write'
@@ -26,6 +22,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
+      # NOVO PASSO DE DEPURAÇÃO: Pede ao robô para listar todos os arquivos
+      - name: List files for debugging
+        run: ls -R
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v1
