@@ -1,4 +1,4 @@
-# deploy-auth-service.yml - Versão 8 (FINAL) com Self-Hosted Runner
+# deploy-auth-service.yml - Versão 9 (FINAL) com Autenticação Nativa do Runner
 
 name: Deploy Auth Service to Cloud Run
 
@@ -13,30 +13,25 @@ on:
 jobs:
   build-and-deploy:
     name: Build and Deploy
-    # --- MUDANÇA CRÍTICA AQUI ---
-    # Agora o trabalho rodará no nosso robô particular dentro do GCP
+    # O trabalho rodará no nosso robô particular
     runs-on: self-hosted
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # A autenticação agora é mais simples, pois o runner já está
-      # dentro do ambiente seguro e associado a uma conta de serviço.
+      # --- AUTENTICAÇÃO SIMPLIFICADA ---
+      # Sem a chave, esta ação irá automaticamente usar a identidade da VM,
+      # que já tem as permissões corretas.
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v1
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v1
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
       - name: Configure Docker
         run: gcloud auth configure-docker southamerica-east1-docker.pkg.dev
 
-      - name: Build Docker image
+      - name: Build and Push Docker image
         run: docker build -t southamerica-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/peoplepulse-repo/auth-service:${{ github.sha }} -f ./backend/auth-service/Dockerfile ./backend/auth-service
 
       - name: Push Docker image
