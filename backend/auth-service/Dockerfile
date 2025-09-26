@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 8080
 
 # 6. O comando para iniciar a aplicação quando o contêiner rodar.
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "$PORT"]
