@@ -1,6 +1,8 @@
-# Versão Final com Self-Hosted Runner e Chave
+# deploy-auth-service.yml - v11 (Simplificado, sem API Gateway)
+
 name: Deploy Auth Service to Cloud Run
-on: workflow_dispatch
+on:
+  workflow_dispatch:
 jobs:
   build-and-deploy:
     name: Build and Deploy
@@ -19,6 +21,13 @@ jobs:
         run: docker build -t southamerica-east1-docker.pkg.dev/${{ steps.auth.outputs.project_id }}/peoplepulse-repo/auth-service:${{ github.sha }} -f ./backend/auth-service/Dockerfile ./backend/auth-service
       - name: Push Docker image
         run: docker push southamerica-east1-docker.pkg.dev/${{ steps.auth.outputs.project_id }}/peoplepulse-repo/auth-service:${{ github.sha }}
-      - name: Deploy to Cloud Run
-        run: gcloud run deploy auth-service --image=southamerica-east1-docker.pkg.dev/${{ steps.auth.outputs.project_id }}/peoplepulse-repo/auth-service:${{ github.sha }} --region=southamerica-east1 --platform=managed --allow-unauthenticated
-    
+      - name: Deploy to Cloud Run (Private)
+        run: gcloud run deploy auth-service --image=southamerica-east1-docker.pkg.dev/${{ steps.auth.outputs.project_id }}/peoplepulse-repo/auth-service:${{ github.sha }} --region=southamerica-east1 --platform=managed
+      
+      # NOVO PASSO: Concede permissão de acesso APENAS para seu usuário
+      - name: Allow user invocation
+        run: |-
+          gcloud run services add-iam-policy-binding auth-service \
+            --member="user:contato@ej7solutions.com.br" \
+            --role="roles/run.invoker" \
+            --region=southamerica-east1
