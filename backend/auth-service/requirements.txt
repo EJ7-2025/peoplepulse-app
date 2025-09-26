@@ -1,5 +1,2 @@
 fastapi
 uvicorn[standard]
-pydantic
-python-jose[cryptography]
-passlib[bcrypt]
