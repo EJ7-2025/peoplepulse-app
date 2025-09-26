@@ -1,4 +1,4 @@
-# deploy-auth-service.yml - Versão 9 (FINAL) com Autenticação Nativa do Runner
+# deploy-auth-service.yml - Versão 10 (FINAL E CORRIGIDA)
 
 name: Deploy Auth Service to Cloud Run
 
@@ -13,25 +13,34 @@ on:
 jobs:
   build-and-deploy:
     name: Build and Deploy
-    # O trabalho rodará no nosso robô particular
     runs-on: self-hosted
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # --- AUTENTICAÇÃO SIMPLIFICADA ---
-      # Sem a chave, esta ação irá automaticamente usar a identidade da VM,
-      # que já tem as permissões corretas.
+      # --- CONFIGURAÇÃO DE AUTENTICAÇÃO CORRIGIDA ---
+      # Restauramos a configuração original do Workload Identity Federation,
+      # que é a correta para este método.
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v1
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
 
       - name: Configure Docker
         run: gcloud auth configure-docker southamerica-east1-docker.pkg.dev
 
-      - name: Build and Push Docker image
+      - name: Build Docker image
         run: docker build -t southamerica-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/peoplepulse-repo/auth-service:${{ github.sha }} -f ./backend/auth-service/Dockerfile ./backend/auth-service
 
       - name: Push Docker image
